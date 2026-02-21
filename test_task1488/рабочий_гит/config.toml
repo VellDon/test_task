@@ -1,0 +1,8 @@
+[main]
+input = "../"
+output = "../result/"
+[login]
+age = 34
+gender = "Male"
+name = "VIta"
+path = "../"

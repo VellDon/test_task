@@ -1,0 +1,4 @@
+[main]
+input = "./cvs/"
+output = "./cvs/res1488.cvs"
+filename_mask = ["Free"]

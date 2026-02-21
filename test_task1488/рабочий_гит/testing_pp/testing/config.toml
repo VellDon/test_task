@@ -1,0 +1,5 @@
+[main]
+input = "./cvs/"
+output = "result.cvs"
+filename_mask = ["level", "trade", "tvar", "gnida"]
+

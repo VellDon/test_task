@@ -30,8 +30,7 @@ int main(int argc, char *argv[])
     }
     catch (const toml::parse_error &err)
     {
-        spdlog::error("Ошибка парсинга конфигурации: {} (строка {}, столбец {})",
-                      err.description(), err.source().begin.line, err.source().begin.column);
+        spdlog::error("Ошибка файла .toml: {} ", err.what());
         return 1; //  завершение программы
     }
     catch (const std::exception &err)
@@ -42,7 +41,7 @@ int main(int argc, char *argv[])
 
     if (table.empty())
     {
-        spdlog::error("отсутстувует файл конфигурации");
+        spdlog::error("Empty file configuration");
         return 1;
     }
 

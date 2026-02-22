@@ -9,7 +9,7 @@
 #include "median.h"
 
 //========================================================//
-/* Флаги компиляции и линоквки для логов -lspdlog -lfmt */
+/* Флаги компиляции и линоквки для логов g++ main.cpp -lboost_program_options -lspdlog -lfmt */
 
 namespace po = boost::program_options;
 int main(int argc, char *argv[])
@@ -21,9 +21,12 @@ int main(int argc, char *argv[])
 
     std::string name_file_config = Parsing(argc, argv);
 
-    /* Шаг 2 - настройка конфигурации */
+    /* Шаг 2 - настройка конфигурации и проверки данных .toml */
 
     toml::table table;
+
+    // -----------------------проверка файла------------------------------------
+
     try
     {
         table = toml::parse_file(name_file_config);
@@ -31,7 +34,7 @@ int main(int argc, char *argv[])
     catch (const toml::parse_error &err)
     {
         spdlog::error("Ошибка файла .toml: {} ", err.what());
-        return 1; //  завершение программы
+        return 1;
     }
     catch (const std::exception &err)
     {
@@ -45,13 +48,54 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    //  ----------------------достаем секцию [main] и [input]-------------------------------------
+
     auto main_table = table["main"].as_table();
-    auto mask_array = (*main_table)["filename_mask"].as_array(); // filename_mask → массив
+
+    if (!main_table)
+    {
+        spdlog::error("отсутствует секция main в .toml");
+        return 1;
+    }
+
+    if (!main_table->contains("input"))
+    {
+        spdlog::error("отсутствует input в .toml");
+        return 1;
+    }
+
+    auto input_ptr = main_table->get_as<std::string>("input");
+
+    if (!input_ptr)
+    {
+        spdlog::error("Параметр input должен быть строкой");
+        return 1;
+    }
+
+    std::string input = input_ptr->get();
+
+    //------------------------настриваем output и маски--------------------------------------
+
+    auto mask_array = main_table->get_as<toml::array>("filename_mask");
+
     std::vector<std::string> masks;
+
+    if (mask_array->empty())
+    {
+        spdlog::info("отсутствуют маски");
+    }
+    else
+    {
+        for (auto &el : *mask_array)
+        {
+            std::string name = el.get_value_exact
+                                   masks.push_back(el.value);
+        }
+    }
 
     for (auto &el : *mask_array)
     {
-        masks.push_back(el.value<std::string>().value_or("none"));
+        masks.push_back(el.value<std::string>().value_or(""));
     }
 
     std::cout << "СПИСОК ИМЕН ИХ КОНФИГА:" << std::endl;
@@ -60,8 +104,8 @@ int main(int argc, char *argv[])
         std::cout << "-" << name << std::endl;
     }
 
-    auto input = table["main"]["input"].value_or("./");
     auto output = table["main"]["output"].value_or("out.cvs");
+    spdlog::info("output - {}", output);
 
     // 3 блок поиск подходящих файлов
     std::vector<std::string> list_file = read_list_dir(input, masks);

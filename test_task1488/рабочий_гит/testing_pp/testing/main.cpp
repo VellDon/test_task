@@ -7,11 +7,12 @@
 #include "read_directory.h"
 #include "open_file.h"
 #include "median.h"
+#include "ParseResult.h"
 
 //========================================================//
 /* Флаги компиляции и линоквки для логов g++ main.cpp -lboost_program_options -lspdlog -lfmt */
 
-namespace po = boost::program_options;
+// namespace po = boost::program_options;
 int main(int argc, char *argv[])
 {
     /*Шаг 1 - парсим аргументы, регистрируем флаги,
@@ -19,7 +20,15 @@ int main(int argc, char *argv[])
     Если флага нет устаналиваем переменную по умолчанию
     если неверно указана строка аргументов завершаем*/
 
-    std::string name_file_config = Parsing(argc, argv);
+    auto res = Parsing(argc, argv);
+    if (res.has_error)
+    {
+        return 1;
+    }
+    if (res.show_help)
+    {
+        return 0;
+    }
 
     /* Шаг 2 - настройка конфигурации и проверки данных .toml */
 
@@ -29,7 +38,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        table = toml::parse_file(name_file_config);
+        table = toml::parse_file(res.name_file_config);
     }
     catch (const toml::parse_error &err)
     {
@@ -73,6 +82,12 @@ int main(int argc, char *argv[])
     }
 
     std::string input = input_ptr->get();
+
+    if (!std::filesystem::exists(input) || !std::filesystem::is_directory(input))
+    {
+        spdlog::error("Директория input не существует или не является директорией: {}", input);
+        return 1;
+    }
     spdlog::info("input = {}", input);
 
     //------------------------настриваем output и маски--------------------------------------
@@ -81,17 +96,21 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> masks;
 
-    if (mask_array->empty())
+    if (!mask_array || mask_array->empty())
     {
         spdlog::info("отсутствуют маски");
     }
     else
     {
-        for (auto &el : *mask_array){
-            if(el.is_string()){
+        for (auto &el : *mask_array)
+        {
+            if (el.is_string())
+            {
                 auto s = el.value<std::string>();
                 masks.push_back(*s);
-            }else{
+            }
+            else
+            {
                 spdlog::error("имя маски должен быть string");
                 return 1;
             }
@@ -106,29 +125,39 @@ int main(int argc, char *argv[])
 
     std::string output = "/path/to/output_dir";
 
-    if(main_table->contains("output")){
+    if (main_table->contains("output"))
+    {
         auto output_ptr = main_table->get_as<std::string>("output");
-        if(output_ptr){
+        if (output_ptr)
+        {
             output = output_ptr->get();
+            if (!std::filesystem::exists(output) || !std::filesystem::is_directory(output))
+            {
+                spdlog::warn("Выбраной output директории не существует - {}", output);
+                output = "/path/to/output_dir";
+            }
         }
-
     }
     spdlog::info("выбраный output - {}", output);
 
     // 3 блок поиск подходящих файлов
-    //находим все файлы в директории соответствуещие критериям масок и формату
+    // находим все файлы в директории соответствуещие критериям масок и формату
     auto list_file = read_list_dir(input, masks);
-    if(list_file.empty()){
+    if (list_file.empty())
+    {
         spdlog::error("Отсутствуют файлы для подсчета медианы");
         return 1;
     }
-    
+
     // 4 Открытие файла перенос данных в вектор сортировка по времени
+    std::vector<std::pair<int64_t, double>> all_data;
     for (auto &name_file : list_file)
     {
         std::vector<std::pair<int64_t, double>> data = open_file(name_file);
-        mediana(data, output);
+        all_data.insert(all_data.end(), data.begin(), data.end());
     }
+
+    mediana(all_data, output);
 
     return 0;
 }

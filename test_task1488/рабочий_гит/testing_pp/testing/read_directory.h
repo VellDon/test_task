@@ -1,19 +1,21 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
-
+#include <set>
+#include <spdlog/spdlog.h>
 namespace fs = std::filesystem;
 
-std::vector<std::string> read_list_dir(const std::string &path, std::vector<std::string> masks)
+std::set<std::string> read_list_dir(const std::string &path, std::vector<std::string> masks)
 {
-    std::cout << "Вошли в функцию поиска файлов" << std::endl;
+    spdlog::info("Вошли в функцию поиска файлов");
     fs::path dir = path;
-    std::vector<std::string> list_file;
+    std::set<std::string> list_file;
+    
     for (const fs::directory_entry &entry : fs::directory_iterator(dir))
     {
-        if (entry.is_regular_file() && entry.path().extension() == ".cvs") // только обычные файлы
+        if (entry.is_regular_file() && entry.path().extension() == ".csv") // только обычные файлы
         {
-            std::cout << entry.path().filename() << std::endl;
+            spdlog::info("Обрабатываемый файл - {}", entry.path().filename());
             std::string filename = entry.path().filename().string();
             if (!masks.empty())
             {
@@ -21,16 +23,19 @@ std::vector<std::string> read_list_dir(const std::string &path, std::vector<std:
                 {
                     if (filename.find(title) != std::string::npos)
                     {
-                        list_file.push_back(entry.path().filename());
+                        list_file.insert(entry.path().filename());
+                        //list_file.insert(entry.path().string());
+                        break;
                     }
                 }
             }
             else
             {
-                list_file.push_back(entry.path().filename());
+                list_file.insert(entry.path().filename());
+                //list_file.insert(entry.path().string());
             }
         }
     }
-    std::cout << "нашли список подходящих" << std::endl;
+    spdlog::info("нашли список подходящих");
     return list_file;
 }

@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
     }
 
     std::string input = input_ptr->get();
+    spdlog::info("input = {}", input);
 
     //------------------------настриваем output и маски--------------------------------------
 
@@ -86,30 +87,42 @@ int main(int argc, char *argv[])
     }
     else
     {
-        for (auto &el : *mask_array)
-        {
-            std::string name = el.get_value_exact
-                                   masks.push_back(el.value);
+        for (auto &el : *mask_array){
+            if(el.is_string()){
+                auto s = el.value<std::string>();
+                masks.push_back(*s);
+            }else{
+                spdlog::error("имя маски должен быть string");
+                return 1;
+            }
         }
     }
 
-    for (auto &el : *mask_array)
-    {
-        masks.push_back(el.value<std::string>().value_or(""));
-    }
-
-    std::cout << "СПИСОК ИМЕН ИХ КОНФИГА:" << std::endl;
+    spdlog::info("Выбранные маски для файлов:");
     for (auto &name : masks)
     {
         std::cout << "-" << name << std::endl;
     }
 
-    auto output = table["main"]["output"].value_or("out.cvs");
-    spdlog::info("output - {}", output);
+    std::string output = "/path/to/output_dir";
+
+    if(main_table->contains("output")){
+        auto output_ptr = main_table->get_as<std::string>("output");
+        if(output_ptr){
+            output = output_ptr->get();
+        }
+
+    }
+    spdlog::info("выбраный output - {}", output);
 
     // 3 блок поиск подходящих файлов
-    std::vector<std::string> list_file = read_list_dir(input, masks);
-
+    //находим все файлы в директории соответствуещие критериям масок и формату
+    auto list_file = read_list_dir(input, masks);
+    if(list_file.empty()){
+        spdlog::error("Отсутствуют файлы для подсчета медианы");
+        return 1;
+    }
+    
     // 4 Открытие файла перенос данных в вектор сортировка по времени
     for (auto &name_file : list_file)
     {

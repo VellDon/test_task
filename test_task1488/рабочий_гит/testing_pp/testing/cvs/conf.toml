@@ -1,4 +1,4 @@
 [main]
-input = "./cvs/"
-output = "./cvs/res1488.cvs"
+input = "./cvs"
+output = ""
 filename_mask = ["Free"]

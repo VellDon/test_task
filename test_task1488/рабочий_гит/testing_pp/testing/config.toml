@@ -1,5 +1,5 @@
 [main]
-input = "./cvs/"
-output = "result.cvs"
+input = "./"
+output = "/FOLDER_XXXX"
 filename_mask = ["level", "trade", "tvar", "gnida"]
 

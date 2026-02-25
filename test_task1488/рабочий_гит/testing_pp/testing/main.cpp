@@ -2,6 +2,7 @@
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <boost/program_options.hpp>
+#include <algorithm>
 #include "toml++/toml.h"
 #include "parsing.h"
 #include "read_directory.h"
@@ -123,8 +124,7 @@ int main(int argc, char *argv[])
         std::cout << "-" << name << std::endl;
     }
 
-    std::string output = "/path/to/output_dir";
-
+    std::string output = "./output";
     if (main_table->contains("output"))
     {
         auto output_ptr = main_table->get_as<std::string>("output");
@@ -134,9 +134,11 @@ int main(int argc, char *argv[])
             if (!std::filesystem::exists(output) || !std::filesystem::is_directory(output))
             {
                 spdlog::warn("Выбраной output директории не существует - {}", output);
-                output = "/path/to/output_dir";
+                output = "./output";
             }
         }
+    }else {
+        spdlog::warn("Отсутствует параметр output");
     }
     spdlog::info("выбраный output - {}", output);
 
@@ -156,6 +158,9 @@ int main(int argc, char *argv[])
         std::vector<std::pair<int64_t, double>> data = open_file(name_file);
         all_data.insert(all_data.end(), data.begin(), data.end());
     }
+    std::sort(all_data.begin(), all_data.end(), [](auto &a, auto &b){
+        return a.first < b.first;
+    });
 
     mediana(all_data, output);
 

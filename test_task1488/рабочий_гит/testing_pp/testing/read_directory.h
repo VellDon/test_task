@@ -15,24 +15,25 @@ std::set<std::string> read_list_dir(const std::string &path, std::vector<std::st
     {
         if (entry.is_regular_file() && entry.path().extension() == ".csv") // только обычные файлы
         {
-            spdlog::info("Обрабатываемый файл - {}", entry.path().filename());
             std::string filename = entry.path().filename().string();
+            spdlog::info("Обрабатываемый файл - {}", filename);
             if (!masks.empty())
             {
                 for (auto &title : masks)
                 {
                     if (filename.find(title) != std::string::npos)
                     {
-                        list_file.insert(entry.path().filename());
-                        //list_file.insert(entry.path().string());
+                        //list_file.insert(entry.path().filename());
+                        list_file.insert(entry.path().string());
+                        std::cout << entry.path().string() << std::endl;
                         break;
                     }
                 }
             }
             else
             {
-                list_file.insert(entry.path().filename());
-                //list_file.insert(entry.path().string());
+                //list_file.insert(entry.path().filename());
+                list_file.insert(entry.path().string());
             }
         }
     }

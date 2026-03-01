@@ -4,6 +4,7 @@
 #include <sstream>
 #include <queue>
 #include <functional>
+#include <format>
 
 int mediana(const std::vector<std::pair<int64_t, double>> &mass, const std::string &output_file)
 {
@@ -11,17 +12,22 @@ int mediana(const std::vector<std::pair<int64_t, double>> &mass, const std::stri
     std::priority_queue<double, std::vector<double>, std::greater<double>> max_heap;
 
     fs::path dir = output_file;
-    try{
-    if(!fs::exists(dir)){
-        fs::create_directories(dir);
-        spdlog::info("Создаем новую директорию {}", dir.string());
+    try
+    {
+        if (!fs::exists(dir))
+        {
+            fs::create_directories(dir);
+            spdlog::info("Создаем новую директорию {}", dir.string());
+        }
     }
-    }catch(const fs::filesystem_error& e){
+    catch (const fs::filesystem_error &e)
+    {
         spdlog::error("Ошибка создания директрии output - {}", e.what());
         return 1;
     }
     std::ofstream file(dir / "median_result.csv");
-    if(!file.is_open()){
+    if (!file.is_open())
+    {
         spdlog::error("Не удалось создать файл - median_result.csv");
         return 1;
     }
@@ -35,7 +41,7 @@ int mediana(const std::vector<std::pair<int64_t, double>> &mass, const std::stri
             new_median = num.second;
             file << num.first << ";" << new_median << "\n";
             old_median = new_median;
-            
+
             continue;
         }
         if (num.second <= min_heap.top())
@@ -71,10 +77,11 @@ int mediana(const std::vector<std::pair<int64_t, double>> &mass, const std::stri
                 new_median = min_heap.top();
             }
         }
-        
+
         if ((std::abs(old_median - new_median) > 1e-9))
         {
-            file << num.first << ";" << new_median << "\n";
+            std::string median = std::format("{};{:.8f}", num.first, new_median);
+            file << median << "\n";
             old_median = new_median;
         }
     }

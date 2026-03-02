@@ -9,6 +9,7 @@
 
 int mult_stream(std::string &name_file)
 {
+    std::vector<std::ofstream> multi_str;
     int count_file = 0;
     std::ifstream name(name_file);
     if (!name.is_open())
@@ -93,8 +94,10 @@ int mult_stream(std::string &name_file)
             }
             for (auto &num : data)
             {
-                file << num.first << ";" << num.second << "\n";
+                std::string temp_num = std::format("{};{:.8f}", num.first, num.second);
+                file << temp_num << "\n";
             }
+            multi_str.emplace_back(temp_name);
             data.clear();
             count_line = 0;
         }

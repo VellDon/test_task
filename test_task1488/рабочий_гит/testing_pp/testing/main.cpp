@@ -125,21 +125,31 @@ int main(int argc, char *argv[])
     }
 
     std::string output = "./output";
-    if (main_table->contains("output"))
+    if (auto output_ptr = main_table->get_as<std::string>("output"))
     {
-        auto output_ptr = main_table->get_as<std::string>("output");
-        if (output_ptr)
-        {
-            output = output_ptr->get();
-            if (!std::filesystem::exists(output) || !std::filesystem::is_directory(output))
-            {
-                spdlog::warn("Выбраной output директории не существует - {}", output);
-                output = "./output";
-            }
-        }
-    }else {
-        spdlog::warn("Отсутствует параметр output");
+
+        output = output_ptr->get();
     }
+    else
+    {
+        spdlog::warn("Отсутствует параметр output, используем дефолт {}", output);
+    }
+
+    if (!std::filesystem::exists(output) || !std::filesystem::is_directory(output))
+    {
+        spdlog::info("Выбраной output директории не существует - {}", output);
+        try
+        {
+            fs::create_directories(output);
+            spdlog::info("Создаем новую директорию {}", output);
+        }
+        catch (const fs::filesystem_error &e)
+        {
+            spdlog::error("Ошибка создания директрии output - {}", e.what());
+            return 1;
+        }
+    }
+
     spdlog::info("выбраный output - {}", output);
 
     // 3 блок поиск подходящих файлов
@@ -158,9 +168,8 @@ int main(int argc, char *argv[])
         std::vector<std::pair<int64_t, double>> data = open_file(name_file);
         all_data.insert(all_data.end(), data.begin(), data.end());
     }
-    std::sort(all_data.begin(), all_data.end(), [](auto &a, auto &b){
-        return a.first < b.first;
-    });
+    std::sort(all_data.begin(), all_data.end(), [](auto &a, auto &b)
+              { return a.first < b.first; });
 
     mediana(all_data, output);
 

@@ -10,8 +10,15 @@ std::vector<std::pair<int64_t, double>> open_file(std::string name_file)
 {
 
     std::ifstream file(name_file);
-    if(!file.is_open()){
+    if (!file.is_open())
+    {
         spdlog::warn("Не удалось открыть файл - {}", name_file);
+        return {};
+    }
+    // проверка на пустоту
+    if (file.peek() == std::ifstream::traits_type::eof())
+    {
+        spdlog::warn("Файл {} пустой", name_file);
         return {};
     }
     std::string line;
@@ -41,7 +48,7 @@ std::vector<std::pair<int64_t, double>> open_file(std::string name_file)
     std::vector<std::pair<int64_t, double>> data;
     int64_t receive_ts;
     double price;
-    
+
     while (std::getline(file, line))
     {
         if (line.empty())
@@ -52,25 +59,28 @@ std::vector<std::pair<int64_t, double>> open_file(std::string name_file)
         while (std::getline(sss, token, ';'))
         {
             count++;
-            try{
+            try
+            {
                 if (count == count_price)
                 {
                     price = std::stod(token);
-                }                
+                }
                 if (count == count_rts)
                 {
                     receive_ts = std::stoll(token);
                 }
-            }catch(const std::exception &e){
+            }
+            catch (const std::exception &e)
+            {
                 spdlog::warn("Ошибка преобразования в файле {}: {} (строка: {})", name_file, e.what(), line);
                 valid_row = false;
                 break;
             }
         }
-        if(valid_row){
+        if (valid_row)
+        {
             data.emplace_back(receive_ts, price);
         }
-        
     }
 
     return data;

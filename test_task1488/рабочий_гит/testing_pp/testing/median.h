@@ -12,19 +12,6 @@ int mediana(const std::vector<std::pair<int64_t, double>> &mass, const std::stri
     std::priority_queue<double, std::vector<double>, std::greater<double>> max_heap;
 
     fs::path dir = output_file;
-    try
-    {
-        if (!fs::exists(dir))
-        {
-            fs::create_directories(dir);
-            spdlog::info("Создаем новую директорию {}", dir.string());
-        }
-    }
-    catch (const fs::filesystem_error &e)
-    {
-        spdlog::error("Ошибка создания директрии output - {}", e.what());
-        return 1;
-    }
     std::ofstream file(dir / "median_result.csv");
     if (!file.is_open())
     {
